@@ -1,4 +1,4 @@
-// lib.rs — Enhanced version with correct YOT vault ATA handling
+// lib.rs — Final Enhanced Version with Account Fixes
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer, MintTo};
 
@@ -61,14 +61,19 @@ mod yot_yos_dapp {
     }
 }
 
+// 🧱 Account Definitions
+
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     #[account(init, payer = payer, space = 8 + 32 + 8 * 4, seeds = [b"state"], bump)]
     pub global_state: Account<'info, GlobalState>,
+
     #[account(mut)]
     pub payer: Signer<'info>,
-    /// CHECK:
+
+    /// CHECK: This must be a valid derived authority passed from the client
     pub pool_authority: AccountInfo<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
@@ -76,6 +81,7 @@ pub struct Initialize<'info> {
 pub struct SetParams<'info> {
     #[account(mut, seeds = [b"state"], bump)]
     pub global_state: Account<'info, GlobalState>,
+
     pub authority: Signer<'info>,
 }
 
@@ -83,18 +89,25 @@ pub struct SetParams<'info> {
 pub struct SwapAndDistribute<'info> {
     #[account(mut)]
     pub user: Signer<'info>,
+
     #[account(mut)]
     pub yot_source: Account<'info, TokenAccount>,
+
     #[account(mut)]
     pub yot_user_dest: Account<'info, TokenAccount>,
+
     #[account(mut)]
     pub yot_vault: Account<'info, TokenAccount>,
+
     #[account(mut)]
     pub yos_mint: Account<'info, Mint>,
+
     #[account(mut)]
     pub yos_user_dest: Account<'info, TokenAccount>,
+
     #[account(mut, seeds = [b"state"], bump)]
     pub global_state: Account<'info, GlobalState>,
+
     pub token_program: Program<'info, Token>,
 }
 
@@ -104,6 +117,7 @@ pub struct AddLiquidity<'info> {
     pub global_state: Account<'info, GlobalState>,
 }
 
+// 🛠 CPI Helper Methods
 impl<'info> SwapAndDistribute<'info> {
     fn transfer_to_user(&self) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
         let cpi_accounts = Transfer {
@@ -133,6 +147,7 @@ impl<'info> SwapAndDistribute<'info> {
     }
 }
 
+// 📦 Persistent Program State
 #[account]
 pub struct GlobalState {
     pub pool_authority: Pubkey,
